@@ -18,10 +18,13 @@ import org.neo4j.driver.v1.AuthToken;
 import org.neo4j.driver.v1.AuthTokens;
 import org.neo4j.driver.v1.Session;
 import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -38,11 +41,25 @@ import java.util.concurrent.TimeUnit;
 @Component(immediate = true, service = GraphDatabase.class)
 public class GraphDatabase {
 
+	public static final String DEFAULT_EMBEDDED_DB_PATH = "data/neo4j/default";
+
 	/**
 	 * A basic timeout value after a session is being automatically closed if one of the runStatement methods is being
 	 * used with the autocloseSession parameter set to true.
 	 */
 	public static final int SESSION_AUTOCLOSE_TIMEOUT = 5000;
+
+	public GraphDatabaseService getEmbeddedDatabaseService() {
+		if (_embeddedDatabaseService == null) {
+			GraphDatabaseFactory graphDatabaseFactory =
+				new GraphDatabaseFactory();
+
+			_embeddedDatabaseService = graphDatabaseFactory.newEmbeddedDatabase(
+				new File(DEFAULT_EMBEDDED_DB_PATH));
+		}
+
+		return _embeddedDatabaseService;
+	}
 
 	/**
 	 * Acquires a new Neo4j Driver object.
@@ -244,6 +261,7 @@ public class GraphDatabase {
 		};
 	}
 
+	private GraphDatabaseService _embeddedDatabaseService;
 	private org.neo4j.driver.v1.Driver _neo4jDriver;
 	private Map<String, Session> _sessionMap;
 
